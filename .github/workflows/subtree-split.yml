@@ -407,7 +407,7 @@ jobs:
           echo "📦 Creating archive: $ARCHIVE_NAME"
           
           # Create archive excluding .git
-          tar -czf "$ARCHIVE_NAME" --exclude='.git' .
+          tar -czf "$ARCHIVE_NAME" --exclude='.git' "${PACKAGE_NAME}"
           
           echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
           
