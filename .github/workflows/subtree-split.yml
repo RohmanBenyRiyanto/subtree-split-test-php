@@ -21,45 +21,42 @@ jobs:
       - name: Auto-create PHP and Node repos if missing
         run: |
           set -e
-          
-          # PHP repo
-          if ! curl -H "Authorization: token $REPO_TOKEN" \
-                    -H "Accept: application/vnd.github+json" \
-                    https://api.github.com/repos/RohmanBenyRiyanto/subtree-split-test-php \
-                    | grep -q '"full_name"'; then
-            echo "PHP repo not found. Creating..."
-            curl -X POST \
-              -H "Authorization: token $REPO_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/user/repos \
-              -d '{"name":"subtree-split-test-php","private":false}'
-          else
-            echo "PHP repo exists."
-          fi
 
-          # Node repo
-          if ! curl -H "Authorization: token $REPO_TOKEN" \
-                    -H "Accept: application/vnd.github+json" \
-                    https://api.github.com/repos/RohmanBenyRiyanto/subtree-split-test-node \
-                    | grep -q '"full_name"'; then
-            echo "Node repo not found. Creating..."
-            curl -X POST \
-              -H "Authorization: token $REPO_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/user/repos \
-              -d '{"name":"subtree-split-test-node","private":false}'
-          else
-            echo "Node repo exists."
-          fi
+          create_repo_if_missing() {
+            REPO_NAME=$1
+            echo "Checking repo $REPO_NAME..."
+            status=$(curl -s -o /dev/null -w "%{http_code}" \
+                     -H "Authorization: token $REPO_TOKEN" \
+                     https://api.github.com/repos/RohmanBenyRiyanto/$REPO_NAME)
+            if [ "$status" -eq 404 ]; then
+              echo "Repo $REPO_NAME not found. Creating..."
+              curl -s -X POST \
+                   -H "Authorization: token $REPO_TOKEN" \
+                   -H "Accept: application/vnd.github+json" \
+                   https://api.github.com/user/repos \
+                   -d "{\"name\":\"$REPO_NAME\",\"private\":false}"
+              echo "Waiting for repo $REPO_NAME to be ready..."
+              sleep 10
+            else
+              echo "Repo $REPO_NAME exists."
+            fi
+          }
+
+          create_repo_if_missing "subtree-split-test-php"
+          create_repo_if_missing "subtree-split-test-node"
 
       - name: Split php/
         run: git subtree split --prefix=php -b php-split
 
       - name: Push php subtree
-        run: git push https://$REPO_TOKEN@github.com/RohmanBenyRiyanto/subtree-split-test-php php-split:main --force
+        run: |
+          git push https://$REPO_TOKEN@github.com/RohmanBenyRiyanto/subtree-split-test-php \
+            php-split:main --force
 
       - name: Split node/
         run: git subtree split --prefix=node -b node-split
 
       - name: Push node subtree
-        run: git push https://$REPO_TOKEN@github.com/RohmanBenyRiyanto/subtree-split-test-node node-split:main --force
+        run: |
+          git push https://$REPO_TOKEN@github.com/RohmanBenyRiyanto/subtree-split-test-node \
+            node-split:main --force
