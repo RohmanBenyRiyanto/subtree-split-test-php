@@ -1,0 +1,13 @@
+{
+  "name": "benz-dev/subtree-split-test-php",
+  "description": "Sample PHP package for subtree split testing",
+  "version": "1.0.0",
+  "autoload": {
+    "psr-4": {
+      "SubtreeTest\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.4"
+  }
+}

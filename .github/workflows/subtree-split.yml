@@ -1,0 +1,62 @@
+name: Subtree Split (AUTO CREATE)
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+      - name: Create target repos if missing
+        run: |
+          curl -H "Authorization: token $REPO_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               https://api.github.com/repos/RohmanBenyRiyanto/subtree-split-test-php \
+               | grep -q '"not found"' && \
+               curl -X POST \
+                 -H "Authorization: token $REPO_TOKEN" \
+                 -H "Accept: application/vnd.github+json" \
+                 https://api.github.com/user/repos \
+                 -d '{"name":"subtree-split-test-php","private":false}' || true
+
+          curl -H "Authorization: token $REPO_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               https://api.github.com/repos/RohmanBenyRiyanto/subtree-split-test-node \
+               | grep -q '"not found"' && \
+               curl -X POST \
+                 -H "Authorization: token $REPO_TOKEN" \
+                 -H "Accept: application/vnd.github+json" \
+                 https://api.github.com/user/repos \
+                 -d '{"name":"subtree-split-test-node","private":false}' || true
+
+      # PHP SPLIT
+      - name: Split php/
+        run: |
+          git subtree split --prefix=php -b php-split
+
+      - name: Push php subtree
+        run: |
+          git push https://$REPO_TOKEN@github.com/RohmanBenyRiyanto/subtree-split-test-php \
+            php-split:main --force
+
+      # NODE SPLIT
+      - name: Split node/
+        run: |
+          git subtree split --prefix=node -b node-split
+
+      - name: Push node subtree
+        run: |
+          git push https://$REPO_TOKEN@github.com/RohmanBenyRiyanto/subtree-split-test-node \
+            node-split:main --force
